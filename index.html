@@ -1,17 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Scanner Konsumsi Keluarga</title>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -30,10 +28,7 @@ body {
   box-shadow: 0 3px 15px rgba(0,0,0,.08);
 }
 
-h2 {
-  text-align: center;
-  margin-top: 0;
-}
+h2 { text-align: center; margin-top: 0; }
 
 .subtitle {
   text-align: center;
@@ -70,9 +65,7 @@ button {
   margin-bottom: 10px;
 }
 
-button:disabled {
-  background: #999;
-}
+button:disabled { background: #999; }
 
 #stopButton {
   background: #b42318;
@@ -96,20 +89,9 @@ button:disabled {
   line-height: 1.5;
 }
 
-.success {
-  background: #dcfce7 !important;
-  color: #166534;
-}
-
-.error {
-  background: #fee2e2 !important;
-  color: #991b1b;
-}
-
-.warning {
-  background: #fef3c7 !important;
-  color: #92400e;
-}
+.success { background: #dcfce7 !important; color: #166534; }
+.error { background: #fee2e2 !important; color: #991b1b; }
+.warning { background: #fef3c7 !important; color: #92400e; }
 
 .result {
   margin-top: 15px;
@@ -135,7 +117,6 @@ button:disabled {
 </head>
 
 <body>
-
 <div class="container">
 
   <h2>Scanner Konsumsi Keluarga</h2>
@@ -148,13 +129,8 @@ button:disabled {
     <option value="siang">Makan Siang</option>
   </select>
 
-  <button id="startButton" onclick="mulaiScanner()">
-    Mulai Scanner
-  </button>
-
-  <button id="stopButton" onclick="berhentiScanner()">
-    Hentikan Scanner
-  </button>
+  <button id="startButton" onclick="mulaiScanner()">Mulai Scanner</button>
+  <button id="stopButton" onclick="berhentiScanner()">Hentikan Scanner</button>
 
   <div id="reader"></div>
 
@@ -167,13 +143,10 @@ button:disabled {
   <div class="note">
     Setiap QR yang berhasil dipindai dihitung sebagai 1 porsi.
   </div>
-
 </div>
 
 <script>
-
-// GANTI dengan URL Web App Apps Script yang berakhiran /exec
-const API_URL = "https://script.google.com/macros/s/AKfycbx1KJSuN8bBhQYW1C0Vc_L32qAEvQVHXntuUUxq-Xw2YRa3F9hD07BMsJWSCcNQP3nxJw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzvgZK6ki-VfWvsoPXzeNvRy6sV7xyANSywjCKboNExVy6TJ-CQD5IUmsiFHk2ZJVcS/exec";
 
 let scanner = null;
 let scannerAktif = false;
@@ -182,7 +155,7 @@ let nomorCallback = 0;
 let timerResume = null;
 
 
-function status(pesan, tipe = "") {
+function tampilStatus(pesan, tipe = "") {
   const el = document.getElementById("status");
   el.className = tipe;
   el.textContent = pesan;
@@ -204,7 +177,6 @@ function amanHTML(teks) {
 
 function tampilHasil(data) {
   const box = document.getElementById("result");
-
   box.style.display = "block";
 
   box.innerHTML = `
@@ -222,7 +194,6 @@ function tampilHasil(data) {
 
 function panggilServer(parameter) {
   return new Promise((resolve, reject) => {
-
     const callbackName = "callbackScan" + (++nomorCallback);
     const script = document.createElement("script");
 
@@ -236,14 +207,13 @@ function panggilServer(parameter) {
     const timeout = setTimeout(() => {
       bersihkan();
       reject(new Error("Server tidak merespons. Periksa LOG_SCAN sebelum scan ulang."));
-    }, 15000);
+    }, 20000);
 
     function bersihkan() {
       if (selesai) return;
 
       selesai = true;
       clearTimeout(timeout);
-
       delete window[callbackName];
 
       if (script.parentNode) {
@@ -262,30 +232,18 @@ function panggilServer(parameter) {
     };
 
     script.src = API_URL + "?" + query.toString();
-
     document.body.appendChild(script);
   });
 }
 
 
 async function mulaiScanner() {
-
   if (scannerAktif) return;
 
-  if (
-    API_URL.includes("MASUKKAN_URL") ||
-    !API_URL.endsWith("/exec")
-  ) {
-    status("URL Apps Script belum benar. Gunakan URL yang berakhiran /exec.", "error");
-    return;
-  }
-
   document.getElementById("startButton").disabled = true;
-
-  status("Meminta izin kamera...");
+  tampilStatus("Meminta izin kamera...");
 
   try {
-
     if (!scanner) {
       scanner = new Html5Qrcode("reader");
     }
@@ -305,23 +263,19 @@ async function mulaiScanner() {
     document.getElementById("startButton").style.display = "none";
     document.getElementById("stopButton").style.display = "block";
 
-    status("Scanner aktif. Arahkan kamera ke QR Code.", "success");
+    tampilStatus("Scanner aktif. Arahkan kamera ke QR Code.", "success");
 
   } catch (error) {
-
-    status("Kamera gagal dibuka: " + error.message, "error");
-
+    tampilStatus("Kamera gagal dibuka: " + error.message, "error");
     document.getElementById("startButton").disabled = false;
   }
 }
 
 
 async function berhasilScan(teksQR) {
-
   if (sedangMemproses) return;
 
   const id = String(teksQR).trim();
-
   if (!id) return;
 
   sedangMemproses = true;
@@ -330,14 +284,12 @@ async function berhasilScan(teksQR) {
     scanner.pause(true);
   } catch (error) {}
 
-  status("QR terbaca. Sedang memproses...");
-
+  tampilStatus("QR terbaca. Sedang memproses...");
   document.getElementById("result").style.display = "none";
 
   const sesi = document.getElementById("sesi").value;
 
   try {
-
     const data = await panggilServer({
       action: "scan",
       id: id,
@@ -345,46 +297,38 @@ async function berhasilScan(teksQR) {
     });
 
     if (data.status === "SUCCESS") {
-
-      status("BERHASIL! Pengambilan 1 porsi telah dicatat.", "success");
+      tampilStatus("BERHASIL! Pengambilan 1 porsi telah dicatat.", "success");
       tampilHasil(data);
 
     } else if (data.status === "FULL") {
-
-      status("KUOTA HABIS! Tidak bisa mengambil porsi lagi.", "warning");
+      tampilStatus("KUOTA HABIS! Tidak bisa mengambil porsi lagi.", "warning");
       tampilHasil(data);
 
     } else {
-
-      status(data.message || "Terjadi kesalahan.", "error");
+      tampilStatus(data.message || "Terjadi kesalahan.", "error");
     }
 
   } catch (error) {
-
-    status(error.message, "error");
+    tampilStatus(error.message, "error");
 
   } finally {
-
     timerResume = setTimeout(() => {
-
       sedangMemproses = false;
 
       if (scanner && scannerAktif) {
         try {
           scanner.resume();
-          status("Scanner aktif. Siap memindai QR berikutnya.", "success");
+          tampilStatus("Scanner aktif. Siap memindai QR berikutnya.", "success");
         } catch (error) {
-          status("Scanner perlu dimulai ulang.", "warning");
+          tampilStatus("Scanner perlu dimulai ulang.", "warning");
         }
       }
-
     }, 2500);
   }
 }
 
 
 async function berhentiScanner() {
-
   if (timerResume) {
     clearTimeout(timerResume);
     timerResume = null;
@@ -403,13 +347,10 @@ async function berhentiScanner() {
 
   document.getElementById("startButton").style.display = "block";
   document.getElementById("startButton").disabled = false;
-
   document.getElementById("stopButton").style.display = "none";
 
-  status("Scanner dihentikan.");
+  tampilStatus("Scanner dihentikan.");
 }
-
 </script>
-
 </body>
 </html>

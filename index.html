@@ -182,225 +182,56 @@ button {
 // GANTI DENGAN URL WEB APP APPS SCRIPT.
 const API_URL = 'https://script.google.com/macros/s/AKfycbx1KJSuN8bBhQYW1C0Vc_L32qAEvQVHXntuUUxq-Xw2YRa3F9hD07BMsJWSCcNQP3nxJw/exec';
 
-let scanner = null;
-let scanning = false;
-let processing = false;
-let callbackCounter = 0;
+const params = new URLSearchParams(window.location.search);
+const SESI = params.get("sesi") || "pagi";
 
-// Memanggil backend menggunakan JSONP.
-function callAPI(id, pin) {
+let sedangMemproses = false;
 
-  return new Promise((resolve, reject) => {
+function kirimKeServer(id) {
+  if (sedangMemproses) return;
 
-    const callbackName =
-      'qrCallback_' + (++callbackCounter);
+  sedangMemproses = true;
 
-    const script = document.createElement('script');
+  const callbackName = "scanCallback_" + Date.now();
 
-    const params = new URLSearchParams({
-      action: 'validate',
-      id: id,
-      pin: pin,
-      callback: callbackName,
-      _: Date.now()
-    });
+  const script = document.createElement("script");
 
-    const cleanup = () => {
-      delete window[callbackName];
-      script.remove();
-    };
-
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Server tidak merespons.'));
-    }, 15000);
-
-    window[callbackName] = function(data) {
-      clearTimeout(timeout);
-      cleanup();
-      resolve(data);
-    };
-
-    script.onerror = function() {
-      clearTimeout(timeout);
-      cleanup();
-      reject(new Error('Gagal menghubungi server.'));
-    };
-
-    script.src = API_URL + '?' + params.toString();
-
-    document.body.appendChild(script);
-
+  const query = new URLSearchParams({
+    action: "scan",
+    id: id,
+    pin: document.getElementById("pin").value,
+    sesi: SESI,
+    callback: callbackName
   });
-}
 
-// Aktifkan kamera HP.
-async function startCamera() {
+  window[callbackName] = function(data) {
+    delete window[callbackName];
+    script.remove();
 
-  if (API_URL.startsWith('MASUKKAN')) {
-    alert('URL Apps Script belum diisi.');
-    return;
-  }
+    if (data.status === "SUCCESS") {
+      alert(
+        "BERHASIL!\n" +
+        data.nama + "\n" +
+        "Sesi: " + data.sesi + "\n" +
+        "Terpakai: " + data.terpakai + "/" + data.total + "\n" +
+        "Sisa: " + data.sisa + " porsi"
+      );
+    } else {
+      alert(data.message || "Pengambilan gagal.");
+    }
 
-  const pin = document.getElementById('pin').value.trim();
+    sedangMemproses = false;
+  };
 
-  if (!pin) {
-    alert('Masukkan PIN petugas terlebih dahulu.');
-    return;
-  }
+  script.onerror = function() {
+    delete window[callbackName];
+    script.remove();
+    alert("Gagal menghubungi server.");
+    sedangMemproses = false;
+  };
 
-  if (scanning) return;
-
-  scanner = new Html5Qrcode('reader');
-
-  try {
-
-    await scanner.start(
-      { facingMode: 'environment' },
-      {
-        fps: 10,
-        qrbox: {
-          width: 250,
-          height: 250
-        },
-        aspectRatio: 1
-      },
-      onScanSuccess
-    );
-
-    scanning = true;
-
-    document.getElementById('cameraStatus')
-      .textContent = 'Kamera aktif. Arahkan ke QR Code.';
-
-    document.getElementById('startBtn')
-      .textContent = 'KAMERA AKTIF';
-
-  } catch (error) {
-
-    alert(
-      'Kamera gagal diaktifkan. ' +
-      'Pastikan izin kamera sudah diberikan dan halaman dibuka melalui HTTPS.'
-    );
-
-    console.error(error);
-
-  }
-}
-
-// Ketika QR berhasil terbaca.
-async function onScanSuccess(decodedText) {
-
-  if (processing) return;
-
-  processing = true;
-
-  try {
-
-    await scanner.pause(true);
-
-    const id = decodedText.trim();
-
-    showMessage(
-      'Memeriksa tiket...',
-      'Sedang memeriksa database peserta.',
-      'invalid'
-    );
-
-    const pin = document.getElementById('pin').value.trim();
-
-    const data = await callAPI(id, pin);
-
-    showResult(data);
-
-    // Jeda sebelum scan berikutnya.
-    setTimeout(() => {
-
-      if (scanner && scanning) {
-        scanner.resume();
-      }
-
-      processing = false;
-
-    }, 2500);
-
-  } catch (error) {
-
-    showMessage(
-      'KONEKSI GAGAL',
-      error.message,
-      'invalid'
-    );
-
-    setTimeout(() => {
-
-      if (scanner && scanning) {
-        scanner.resume();
-      }
-
-      processing = false;
-
-    }, 2500);
-
-  }
-}
-
-// Menampilkan hasil validasi.
-function showResult(data) {
-
-  const box = document.getElementById('result');
-
-  box.style.display = 'block';
-  box.className = 'result';
-
-  document.getElementById('resultTitle').textContent = '';
-  document.getElementById('resultMessage').textContent =
-    data.message || '';
-
-  document.getElementById('resultName').textContent =
-    data.nama ? 'Nama: ' + data.nama : '';
-
-  document.getElementById('resultId').textContent =
-    data.id ? 'ID: ' + data.id : '';
-
-  document.getElementById('resultInstansi').textContent =
-    data.instansi ? 'Instansi: ' + data.instansi : '';
-
-  if (data.status === 'VALID') {
-
-    box.classList.add('valid');
-    document.getElementById('resultTitle').textContent =
-      '✓ TIKET VALID';
-
-  } else if (data.status === 'USED') {
-
-    box.classList.add('used');
-    document.getElementById('resultTitle').textContent =
-      '✕ SUDAH DIGUNAKAN';
-
-  } else {
-
-    box.classList.add('invalid');
-    document.getElementById('resultTitle').textContent =
-      '⚠ TIDAK VALID';
-
-  }
-}
-
-function showMessage(title, message, type) {
-
-  const box = document.getElementById('result');
-
-  box.style.display = 'block';
-  box.className = 'result ' + type;
-
-  document.getElementById('resultTitle').textContent = title;
-  document.getElementById('resultMessage').textContent = message;
-
-  document.getElementById('resultName').textContent = '';
-  document.getElementById('resultId').textContent = '';
-  document.getElementById('resultInstansi').textContent = '';
-
+  script.src = API_URL + "?" + query.toString();
+  document.body.appendChild(script);
 }
 
 </script>

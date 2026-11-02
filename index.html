@@ -2,132 +2,202 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PCR Ticket Validator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner Konsumsi PCR</title>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-<style>
-* {
-  box-sizing: border-box;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background: #f1f5f9;
-  color: #172033;
-}
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
 
-.container {
-  max-width: 440px;
-  margin: auto;
-}
+    .container {
+      max-width: 480px;
+      margin: auto;
+    }
 
-.header {
-  text-align: center;
-  margin-bottom: 22px;
-}
+    .header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
 
-.header h2 {
-  margin-bottom: 5px;
-  color: #123b63;
-}
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      color: #0f172a;
+    }
 
-.header p {
-  color: #64748b;
-  font-size: 13px;
-}
+    .header p {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
 
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 18px;
-  box-shadow: 0 5px 20px rgba(0,0,0,.07);
-  margin-bottom: 15px;
-}
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    }
 
-label {
-  display: block;
-  font-size: 13px;
-  font-weight: bold;
-  margin-bottom: 7px;
-}
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
 
-input {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  font-size: 15px;
-  margin-bottom: 14px;
-}
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      font-size: 16px;
+      outline: none;
+    }
 
-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 9px;
-  font-weight: bold;
-  font-size: 15px;
-  cursor: pointer;
-}
+    input:focus {
+      border-color: #2563eb;
+    }
 
-.start {
-  background: #145b94;
-  color: white;
-}
+    .session {
+      text-align: center;
+      background: #eff6ff;
+      padding: 13px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      color: #1d4ed8;
+      font-weight: bold;
+    }
 
-#reader {
-  width: 100%;
-  overflow: hidden;
-  border-radius: 12px;
-}
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+    }
 
-#reader video {
-  border-radius: 12px;
-}
+    .status {
+      text-align: center;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: bold;
+    }
 
-.result {
-  display: none;
-  padding: 18px;
-  border-radius: 12px;
-  margin-top: 15px;
-}
+    .result {
+      display: none;
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
 
-.valid {
-  background: #dcfce7;
-  color: #166534;
-}
+    .result.success {
+      display: block;
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
 
-.used {
-  background: #fee2e2;
-  color: #991b1b;
-}
+    .result.full {
+      display: block;
+      background: #fef2f2;
+      border-color: #fca5a5;
+    }
 
-.invalid {
-  background: #fef3c7;
-  color: #92400e;
-}
+    .result.error {
+      display: block;
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
 
-.result h3 {
-  margin-top: 0;
-}
+    .person-name {
+      font-size: 21px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
 
-.result p {
-  font-size: 14px;
-  margin: 7px 0;
-}
+    .institution {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
 
-.small {
-  font-size: 12px;
-  color: #64748b;
-  text-align: center;
-  margin-top: 18px;
-}
-</style>
+    .quota {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+
+    .progress {
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 20px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #16a34a;
+      transition: width 0.3s;
+    }
+
+    .remaining {
+      text-align: center;
+      font-size: 27px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .message {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+      margin-top: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 9px;
+      background: #0f172a;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .button:disabled {
+      opacity: 0.5;
+    }
+  </style>
 </head>
 
 <body>
@@ -135,13 +205,13 @@ button {
 <div class="container">
 
   <div class="header">
-    <h2>PCR TICKET VALIDATOR</h2>
-    <p>Sistem Validasi Tiket dan Kartu Peserta</p>
+    <h1>Scanner Konsumsi</h1>
+    <p>Politeknik Caltex Riau</p>
   </div>
 
   <div class="card">
 
-    <label>PIN PETUGAS</label>
+    <label for="pin">PIN Petugas</label>
     <input
       type="password"
       id="pin"
@@ -149,90 +219,312 @@ button {
       autocomplete="off"
     >
 
-    <button class="start" id="startBtn" onclick="startCamera()">
-      AKTIFKAN KAMERA
-    </button>
+    <div style="height:15px"></div>
 
-  </div>
+    <div class="session" id="sessionLabel">
+      Memuat sesi...
+    </div>
 
-  <div class="card">
     <div id="reader"></div>
-    <p class="small" id="cameraStatus">
-      Kamera belum diaktifkan.
-    </p>
+
+    <div class="status" id="scannerStatus">
+      Menyiapkan kamera...
+    </div>
+
+    <div id="result" class="result">
+
+      <div class="person-name" id="personName"></div>
+      <div class="institution" id="institution"></div>
+
+      <div class="quota">
+        <span>Total kebutuhan</span>
+        <strong id="total">0</strong>
+      </div>
+
+      <div class="quota">
+        <span>Sudah diambil</span>
+        <strong id="used">0</strong>
+      </div>
+
+      <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="remaining" id="remaining">0 porsi</div>
+
+      <div class="message" id="resultMessage"></div>
+
+    </div>
+
   </div>
 
-  <div id="result" class="result">
-    <h3 id="resultTitle"></h3>
-    <p id="resultMessage"></p>
-    <p id="resultName"></p>
-    <p id="resultId"></p>
-    <p id="resultInstansi"></p>
+  <div class="footer">
+    Sistem Validasi Konsumsi PCR
   </div>
-
-  <p class="small">
-    POLITEKNIK CALTEX RIAU<br>
-    Ticket Validation System
-  </p>
 
 </div>
 
 <script>
+  // =====================================
+  // KONFIGURASI
+  // =====================================
 
-// GANTI DENGAN URL WEB APP APPS SCRIPT.
-const API_URL = 'https://script.google.com/macros/s/AKfycbx1KJSuN8bBhQYW1C0Vc_L32qAEvQVHXntuUUxq-Xw2YRa3F9hD07BMsJWSCcNQP3nxJw/exec';
+  const API_URL = "https://script.google.com/macros/s/AKfycbx1KJSuN8bBhQYW1C0Vc_L32qAEvQVHXntuUUxq-Xw2YRa3F9hD07BMsJWSCcNQP3nxJw/exec";
 
-const params = new URLSearchParams(window.location.search);
-const SESI = params.get("sesi") || "pagi";
+  const params = new URLSearchParams(window.location.search);
+  const SESI = (params.get("sesi") || "pagi").toLowerCase();
 
-let sedangMemproses = false;
+  let scanner = null;
+  let sedangMemproses = false;
+  let kameraAktif = false;
 
-function kirimKeServer(id) {
-  if (sedangMemproses) return;
+  // =====================================
+  // TAMPILAN SESI
+  // =====================================
 
-  sedangMemproses = true;
+  const sessionLabel = document.getElementById("sessionLabel");
 
-  const callbackName = "scanCallback_" + Date.now();
+  if (SESI === "pagi") {
+    sessionLabel.textContent = "SESI MAKAN PAGI";
+  } else if (SESI === "siang") {
+    sessionLabel.textContent = "SESI MAKAN SIANG";
+  } else {
+    sessionLabel.textContent = "SESI TIDAK VALID";
+  }
 
-  const script = document.createElement("script");
+  // =====================================
+  // STATUS SCANNER
+  // =====================================
 
-  const query = new URLSearchParams({
-    action: "scan",
-    id: id,
-    pin: document.getElementById("pin").value,
-    sesi: SESI,
-    callback: callbackName
-  });
+  function statusScanner(teks) {
+    document.getElementById("scannerStatus").textContent = teks;
+  }
 
-  window[callbackName] = function(data) {
-    delete window[callbackName];
-    script.remove();
+  // =====================================
+  // TAMPILKAN HASIL
+  // =====================================
+
+  function tampilkanHasil(data) {
+
+    const result = document.getElementById("result");
+
+    result.className = "result";
 
     if (data.status === "SUCCESS") {
-      alert(
-        "BERHASIL!\n" +
-        data.nama + "\n" +
-        "Sesi: " + data.sesi + "\n" +
-        "Terpakai: " + data.terpakai + "/" + data.total + "\n" +
-        "Sisa: " + data.sisa + " porsi"
-      );
+      result.classList.add("success");
+    } else if (data.status === "FULL") {
+      result.classList.add("full");
     } else {
-      alert(data.message || "Pengambilan gagal.");
+      result.classList.add("error");
     }
 
-    sedangMemproses = false;
-  };
+    if (data.nama) {
+      document.getElementById("personName").textContent = data.nama;
+      document.getElementById("institution").textContent =
+        (data.instansi || "") + " | ID: " + (data.id || "");
+    } else {
+      document.getElementById("personName").textContent = "PENGAMBILAN GAGAL";
+      document.getElementById("institution").textContent = "";
+    }
 
-  script.onerror = function() {
-    delete window[callbackName];
-    script.remove();
-    alert("Gagal menghubungi server.");
-    sedangMemproses = false;
-  };
+    if (data.total !== undefined) {
+      document.getElementById("total").textContent = data.total + " porsi";
+      document.getElementById("used").textContent = data.terpakai;
 
-  script.src = API_URL + "?" + query.toString();
-  document.body.appendChild(script);
-}
+      document.getElementById("remaining").textContent =
+        data.sisa + " porsi tersisa";
+
+      const persen = data.total > 0
+        ? Math.min(100, (data.terpakai / data.total) * 100)
+        : 0;
+
+      document.getElementById("progressBar").style.width = persen + "%";
+    }
+
+    document.getElementById("resultMessage").textContent =
+      data.message || "";
+
+    result.style.display = "block";
+  }
+
+  // =====================================
+  // KIRIM HASIL SCAN KE SERVER
+  // =====================================
+
+  function kirimKeServer(id) {
+
+    if (sedangMemproses) return;
+
+    sedangMemproses = true;
+
+    statusScanner("Memproses pengambilan...");
+
+    if (scanner && kameraAktif) {
+      scanner.pause(true);
+    }
+
+    const pin = document.getElementById("pin").value.trim();
+
+    if (!pin) {
+      tampilkanHasil({
+        status: "ERROR",
+        message: "Masukkan PIN petugas terlebih dahulu."
+      });
+
+      selesaiProses();
+      return;
+    }
+
+    const callbackName = "scanCallback_" + Date.now();
+
+    const script = document.createElement("script");
+
+    const query = new URLSearchParams({
+      id: id,
+      pin: pin,
+      sesi: SESI,
+      callback: callbackName
+    });
+
+    let selesai = false;
+
+    function bersihkan() {
+      if (selesai) return;
+      selesai = true;
+
+      delete window[callbackName];
+      script.remove();
+
+      selesaiProses();
+    }
+
+    window[callbackName] = function(data) {
+      tampilkanHasil(data);
+
+      if (data.status === "SUCCESS") {
+        statusScanner("Pengambilan berhasil. Siap scan berikutnya.");
+      } else {
+        statusScanner(data.message || "Scan tidak berhasil.");
+      }
+
+      bersihkan();
+    };
+
+    script.onerror = function() {
+      tampilkanHasil({
+        status: "ERROR",
+        message: "Gagal menghubungi server."
+      });
+
+      statusScanner("Koneksi server gagal.");
+
+      bersihkan();
+    };
+
+    script.src = API_URL + "?" + query.toString();
+
+    document.body.appendChild(script);
+
+    setTimeout(function() {
+      if (!selesai) {
+        tampilkanHasil({
+          status: "ERROR",
+          message: "Server tidak merespons. Periksa koneksi internet."
+        });
+
+        statusScanner("Server tidak merespons.");
+
+        bersihkan();
+      }
+    }, 15000);
+  }
+
+  // =====================================
+  // SELESAI MEMPROSES
+  // =====================================
+
+  function selesaiProses() {
+
+    sedangMemproses = false;
+
+    if (scanner && kameraAktif) {
+      setTimeout(function() {
+        if (!sedangMemproses && kameraAktif) {
+          scanner.resume();
+          statusScanner("Arahkan QR Code ke kamera.");
+        }
+      }, 1800);
+    }
+  }
+
+  // =====================================
+  // HASIL PEMBACAAN QR
+  // =====================================
+
+  function onScanSuccess(decodedText) {
+
+    if (sedangMemproses) return;
+
+    // QR harus berisi ID keluarga saja.
+    // Contoh: 194
+
+    const id = decodedText.trim();
+
+    kirimKeServer(id);
+  }
+
+  // =====================================
+  // MULAI KAMERA
+  // =====================================
+
+  async function mulaiScanner() {
+
+    if (!["pagi", "siang"].includes(SESI)) {
+      statusScanner("Sesi tidak valid. Gunakan ?sesi=pagi atau ?sesi=siang.");
+      return;
+    }
+
+    if (!API_URL.startsWith("https://script.google.com/")) {
+      statusScanner("URL Web App belum diisi dengan benar.");
+      return;
+    }
+
+    scanner = new Html5Qrcode("reader");
+
+    try {
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          },
+          aspectRatio: 1
+        },
+        onScanSuccess
+      );
+
+      kameraAktif = true;
+
+      statusScanner("Kamera aktif. Arahkan QR Code ke kamera.");
+
+    } catch (error) {
+
+      statusScanner(
+        "Kamera gagal dibuka. Izinkan akses kamera dan gunakan HTTPS."
+      );
+
+      console.error(error);
+    }
+  }
+
+  // =====================================
+  // JALANKAN
+  // =====================================
+
+  mulaiScanner();
 
 </script>
 

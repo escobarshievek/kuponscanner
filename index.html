@@ -100,6 +100,7 @@ button:disabled { background: #999; }
   border-radius: 8px;
   display: none;
   line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 
 .result strong {
@@ -122,11 +123,13 @@ button:disabled { background: #999; }
   <h2>Scanner Konsumsi Keluarga</h2>
   <div class="subtitle">Sistem Pengambilan Konsumsi</div>
 
-  <label for="sesi">Pilih Sesi Pengambilan</label>
+  <label for="sesi">Pilih Jenis Pengambilan</label>
 
   <select id="sesi">
     <option value="pagi">Makan Pagi</option>
     <option value="siang">Makan Siang</option>
+    <option value="snack">Snack</option>
+    <option value="eskrim">Es Krim</option>
   </select>
 
   <button id="startButton" onclick="mulaiScanner()">Mulai Scanner</button>
@@ -141,7 +144,7 @@ button:disabled { background: #999; }
   <div id="result" class="result"></div>
 
   <div class="note">
-    Setiap QR yang berhasil dipindai dihitung sebagai 1 porsi.
+    Setiap QR yang berhasil dipindai dihitung sesuai ketentuan distribusi.
   </div>
 </div>
 
@@ -175,20 +178,34 @@ function amanHTML(teks) {
 }
 
 
-function tampilHasil(data) {
+function tampilHasil(data, jenis) {
   const box = document.getElementById("result");
   box.style.display = "block";
 
-  box.innerHTML = `
+  let isi = `
     <div><strong>ID Keluarga:</strong> ${amanHTML(data.id)}</div>
     <div><strong>Nama:</strong> ${amanHTML(data.nama)}</div>
     <div><strong>Instansi:</strong> ${amanHTML(data.instansi)}</div>
-    <div><strong>Sesi:</strong> ${amanHTML(data.sesi)}</div>
-    <hr>
-    <div><strong>Total Kebutuhan:</strong> ${data.total ?? 0}</div>
-    <div><strong>Sudah Diambil:</strong> ${data.terpakai ?? 0}</div>
-    <div><strong>Sisa Kuota:</strong> ${data.sisa ?? 0}</div>
   `;
+
+  if (jenis === "pagi" || jenis === "siang") {
+    isi += `
+      <div><strong>Sesi:</strong> ${amanHTML(data.sesi)}</div>
+      <hr>
+      <div><strong>Total Kebutuhan:</strong> ${data.total ?? 0}</div>
+      <div><strong>Sudah Diambil:</strong> ${data.terpakai ?? 0}</div>
+      <div><strong>Sisa Kuota:</strong> ${data.sisa ?? 0}</div>
+    `;
+  } else {
+    isi += `
+      <hr>
+      <div><strong>Distribusi:</strong> ${jenis === "snack" ? "Snack" : "Es Krim"}</div>
+      <div><strong>Status Snack:</strong> ${amanHTML(data.status_snack ?? "-")}</div>
+      <div><strong>Status Es Krim:</strong> ${amanHTML(data.status_eskrim ?? "-")}</div>
+    `;
+  }
+
+  box.innerHTML = isi;
 }
 
 
@@ -206,7 +223,9 @@ function panggilServer(parameter) {
 
     const timeout = setTimeout(() => {
       bersihkan();
-      reject(new Error("Server tidak merespons. Periksa LOG_SCAN sebelum scan ulang."));
+      reject(new Error(
+        "Server tidak merespons. Periksa LOG sebelum melakukan scan ulang."
+      ));
     }, 20000);
 
     function bersihkan() {
@@ -287,25 +306,63 @@ async function berhasilScan(teksQR) {
   tampilStatus("QR terbaca. Sedang memproses...");
   document.getElementById("result").style.display = "none";
 
-  const sesi = document.getElementById("sesi").value;
+  const jenis = document.getElementById("sesi").value;
 
   try {
-    const data = await panggilServer({
-      action: "scan",
-      id: id,
-      sesi: sesi
-    });
+    let parameter;
+
+    if (jenis === "pagi" || jenis === "siang") {
+      // Tetap menggunakan mekanisme scan lama.
+      parameter = {
+        action: "scan",
+        id: id,
+        sesi: jenis
+      };
+    } else {
+      // Menggunakan mekanisme distribusi baru.
+      parameter = {
+        action: "distribusi",
+        id: id,
+        jenis: jenis
+      };
+    }
+
+    const data = await panggilServer(parameter);
 
     if (data.status === "SUCCESS") {
-      tampilStatus("BERHASIL! Pengambilan 1 porsi telah dicatat.", "success");
-      tampilHasil(data);
+      const namaJenis = {
+        pagi: "Makan Pagi",
+        siang: "Makan Siang",
+        snack: "Snack",
+        eskrim: "Es Krim"
+      };
+
+      tampilStatus(
+        "BERHASIL! Pengambilan " + namaJenis[jenis] + " berhasil dicatat.",
+        "success"
+      );
+
+      tampilHasil(data, jenis);
 
     } else if (data.status === "FULL") {
-      tampilStatus("KUOTA HABIS! Tidak bisa mengambil porsi lagi.", "warning");
-      tampilHasil(data);
+      tampilStatus(
+        data.message || "Kuota pengambilan sudah habis.",
+        "warning"
+      );
+
+      tampilHasil(data, jenis);
+
+    } else if (data.status === "NOT_FOUND") {
+      tampilStatus(
+        data.message || "ID keluarga tidak ditemukan.",
+        "error"
+      );
 
     } else {
-      tampilStatus(data.message || "Terjadi kesalahan.", "error");
+      tampilStatus(
+        data.message || "Terjadi kesalahan.",
+        "error"
+      );
     }
 
   } catch (error) {
@@ -318,7 +375,10 @@ async function berhasilScan(teksQR) {
       if (scanner && scannerAktif) {
         try {
           scanner.resume();
-          tampilStatus("Scanner aktif. Siap memindai QR berikutnya.", "success");
+          tampilStatus(
+            "Scanner aktif. Siap memindai QR berikutnya.",
+            "success"
+          );
         } catch (error) {
           tampilStatus("Scanner perlu dimulai ulang.", "warning");
         }

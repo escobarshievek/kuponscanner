@@ -3,407 +3,354 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PCR Ticket Validator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanner Konsumsi Keluarga</title>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   padding: 20px;
+  background: #f3f4f6;
   font-family: Arial, sans-serif;
-  background: #f1f5f9;
-  color: #172033;
+  color: #222;
 }
 
 .container {
-  max-width: 440px;
-  margin: auto;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 22px;
-}
-
-.header h2 {
-  margin-bottom: 5px;
-  color: #123b63;
-}
-
-.header p {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.card {
+  max-width: 480px;
+  margin: 20px auto;
+  padding: 22px;
   background: white;
-  padding: 20px;
-  border-radius: 18px;
-  box-shadow: 0 5px 20px rgba(0,0,0,.07);
-  margin-bottom: 15px;
+  border-radius: 14px;
+  box-shadow: 0 3px 15px rgba(0,0,0,.08);
+}
+
+h2 { text-align: center; margin-top: 0; }
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 22px;
+  font-size: 14px;
 }
 
 label {
   display: block;
-  font-size: 13px;
   font-weight: bold;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
-input {
+select, button {
   width: 100%;
   padding: 13px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  font-size: 15px;
-  margin-bottom: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+select {
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  background: white;
 }
 
 button {
-  width: 100%;
-  padding: 14px;
   border: none;
-  border-radius: 9px;
-  font-weight: bold;
-  font-size: 15px;
   cursor: pointer;
+  color: white;
+  font-weight: bold;
+  background: #176b45;
+  margin-bottom: 10px;
 }
 
-.start {
-  background: #145b94;
-  color: white;
+button:disabled { background: #999; }
+
+#stopButton {
+  background: #b42318;
+  display: none;
 }
 
 #reader {
   width: 100%;
+  margin-top: 15px;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
-#reader video {
-  border-radius: 12px;
+#status {
+  margin-top: 15px;
+  padding: 13px;
+  border-radius: 8px;
+  background: #f1f1f1;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
 }
+
+.success { background: #dcfce7 !important; color: #166534; }
+.error { background: #fee2e2 !important; color: #991b1b; }
+.warning { background: #fef3c7 !important; color: #92400e; }
 
 .result {
-  display: none;
-  padding: 18px;
-  border-radius: 12px;
   margin-top: 15px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: none;
+  line-height: 1.8;
 }
 
-.valid {
-  background: #dcfce7;
-  color: #166534;
+.result strong {
+  display: inline-block;
+  min-width: 115px;
 }
 
-.used {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.invalid {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.result h3 {
-  margin-top: 0;
-}
-
-.result p {
-  font-size: 14px;
-  margin: 7px 0;
-}
-
-.small {
+.note {
+  color: #777;
   font-size: 12px;
-  color: #64748b;
   text-align: center;
-  margin-top: 18px;
+  margin-top: 15px;
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-  <div class="header">
-    <h2>PCR TICKET VALIDATOR</h2>
-    <p>Sistem Validasi Tiket dan Kartu Peserta</p>
+  <h2>Scanner Konsumsi Keluarga</h2>
+  <div class="subtitle">Sistem Pengambilan Konsumsi</div>
+
+  <label for="sesi">Pilih Sesi Pengambilan</label>
+
+  <select id="sesi">
+    <option value="pagi">Makan Pagi</option>
+    <option value="siang">Makan Siang</option>
+  </select>
+
+  <button id="startButton" onclick="mulaiScanner()">Mulai Scanner</button>
+  <button id="stopButton" onclick="berhentiScanner()">Hentikan Scanner</button>
+
+  <div id="reader"></div>
+
+  <div id="status">
+    Scanner belum aktif. Tekan Mulai Scanner.
   </div>
 
-  <div class="card">
+  <div id="result" class="result"></div>
 
-    <label>PIN PETUGAS</label>
-    <input
-      type="password"
-      id="pin"
-      placeholder="Masukkan PIN petugas"
-      autocomplete="off"
-    >
-
-    <button class="start" id="startBtn" onclick="startCamera()">
-      AKTIFKAN KAMERA
-    </button>
-
+  <div class="note">
+    Setiap QR yang berhasil dipindai dihitung sebagai 1 porsi.
   </div>
-
-  <div class="card">
-    <div id="reader"></div>
-    <p class="small" id="cameraStatus">
-      Kamera belum diaktifkan.
-    </p>
-  </div>
-
-  <div id="result" class="result">
-    <h3 id="resultTitle"></h3>
-    <p id="resultMessage"></p>
-    <p id="resultName"></p>
-    <p id="resultId"></p>
-    <p id="resultInstansi"></p>
-  </div>
-
-  <p class="small">
-    POLITEKNIK CALTEX RIAU<br>
-    Ticket Validation System
-  </p>
-
 </div>
 
 <script>
-
-// GANTI DENGAN URL WEB APP APPS SCRIPT.
-const API_URL = 'MASUKKAN_URL_WEB_APP_APPS_SCRIPT';
+const API_URL = "https://script.google.com/macros/s/AKfycbzvgZK6ki-VfWvsoPXzeNvRy6sV7xyANSywjCKboNExVy6TJ-CQD5IUmsiFHk2ZJVcS/exec";
 
 let scanner = null;
-let scanning = false;
-let processing = false;
-let callbackCounter = 0;
+let scannerAktif = false;
+let sedangMemproses = false;
+let nomorCallback = 0;
+let timerResume = null;
 
-// Memanggil backend menggunakan JSONP.
-function callAPI(id, pin) {
 
+function tampilStatus(pesan, tipe = "") {
+  const el = document.getElementById("status");
+  el.className = tipe;
+  el.textContent = pesan;
+}
+
+
+function amanHTML(teks) {
+  return String(teks ?? "").replace(/[&<>"']/g, function(c) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[c];
+  });
+}
+
+
+function tampilHasil(data) {
+  const box = document.getElementById("result");
+  box.style.display = "block";
+
+  box.innerHTML = `
+    <div><strong>ID Keluarga:</strong> ${amanHTML(data.id)}</div>
+    <div><strong>Nama:</strong> ${amanHTML(data.nama)}</div>
+    <div><strong>Instansi:</strong> ${amanHTML(data.instansi)}</div>
+    <div><strong>Sesi:</strong> ${amanHTML(data.sesi)}</div>
+    <hr>
+    <div><strong>Total Kebutuhan:</strong> ${data.total ?? 0}</div>
+    <div><strong>Sudah Diambil:</strong> ${data.terpakai ?? 0}</div>
+    <div><strong>Sisa Kuota:</strong> ${data.sisa ?? 0}</div>
+  `;
+}
+
+
+function panggilServer(parameter) {
   return new Promise((resolve, reject) => {
+    const callbackName = "callbackScan" + (++nomorCallback);
+    const script = document.createElement("script");
 
-    const callbackName =
-      'qrCallback_' + (++callbackCounter);
-
-    const script = document.createElement('script');
-
-    const params = new URLSearchParams({
-      action: 'validate',
-      id: id,
-      pin: pin,
-      callback: callbackName,
-      _: Date.now()
+    const query = new URLSearchParams({
+      ...parameter,
+      callback: callbackName
     });
 
-    const cleanup = () => {
-      delete window[callbackName];
-      script.remove();
-    };
+    let selesai = false;
 
     const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Server tidak merespons.'));
-    }, 15000);
+      bersihkan();
+      reject(new Error("Server tidak merespons. Periksa LOG_SCAN sebelum scan ulang."));
+    }, 20000);
+
+    function bersihkan() {
+      if (selesai) return;
+
+      selesai = true;
+      clearTimeout(timeout);
+      delete window[callbackName];
+
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    }
 
     window[callbackName] = function(data) {
-      clearTimeout(timeout);
-      cleanup();
+      bersihkan();
       resolve(data);
     };
 
     script.onerror = function() {
-      clearTimeout(timeout);
-      cleanup();
-      reject(new Error('Gagal menghubungi server.'));
+      bersihkan();
+      reject(new Error("Gagal menghubungi Apps Script."));
     };
 
-    script.src = API_URL + '?' + params.toString();
-
+    script.src = API_URL + "?" + query.toString();
     document.body.appendChild(script);
-
   });
 }
 
-// Aktifkan kamera HP.
-async function startCamera() {
 
-  if (API_URL.startsWith('MASUKKAN')) {
-    alert('URL Apps Script belum diisi.');
-    return;
-  }
+async function mulaiScanner() {
+  if (scannerAktif) return;
 
-  const pin = document.getElementById('pin').value.trim();
-
-  if (!pin) {
-    alert('Masukkan PIN petugas terlebih dahulu.');
-    return;
-  }
-
-  if (scanning) return;
-
-  scanner = new Html5Qrcode('reader');
+  document.getElementById("startButton").disabled = true;
+  tampilStatus("Meminta izin kamera...");
 
   try {
+    if (!scanner) {
+      scanner = new Html5Qrcode("reader");
+    }
 
     await scanner.start(
-      { facingMode: 'environment' },
+      { facingMode: "environment" },
       {
         fps: 10,
-        qrbox: {
-          width: 250,
-          height: 250
-        },
-        aspectRatio: 1
+        qrbox: { width: 250, height: 250 }
       },
-      onScanSuccess
+      berhasilScan,
+      function() {}
     );
 
-    scanning = true;
+    scannerAktif = true;
 
-    document.getElementById('cameraStatus')
-      .textContent = 'Kamera aktif. Arahkan ke QR Code.';
+    document.getElementById("startButton").style.display = "none";
+    document.getElementById("stopButton").style.display = "block";
 
-    document.getElementById('startBtn')
-      .textContent = 'KAMERA AKTIF';
+    tampilStatus("Scanner aktif. Arahkan kamera ke QR Code.", "success");
 
   } catch (error) {
-
-    alert(
-      'Kamera gagal diaktifkan. ' +
-      'Pastikan izin kamera sudah diberikan dan halaman dibuka melalui HTTPS.'
-    );
-
-    console.error(error);
-
+    tampilStatus("Kamera gagal dibuka: " + error.message, "error");
+    document.getElementById("startButton").disabled = false;
   }
 }
 
-// Ketika QR berhasil terbaca.
-async function onScanSuccess(decodedText) {
 
-  if (processing) return;
+async function berhasilScan(teksQR) {
+  if (sedangMemproses) return;
 
-  processing = true;
+  const id = String(teksQR).trim();
+  if (!id) return;
+
+  sedangMemproses = true;
 
   try {
+    scanner.pause(true);
+  } catch (error) {}
 
-    await scanner.pause(true);
+  tampilStatus("QR terbaca. Sedang memproses...");
+  document.getElementById("result").style.display = "none";
 
-    const id = decodedText.trim();
+  const sesi = document.getElementById("sesi").value;
 
-    showMessage(
-      'Memeriksa tiket...',
-      'Sedang memeriksa database peserta.',
-      'invalid'
-    );
+  try {
+    const data = await panggilServer({
+      action: "scan",
+      id: id,
+      sesi: sesi
+    });
 
-    const pin = document.getElementById('pin').value.trim();
+    if (data.status === "SUCCESS") {
+      tampilStatus("BERHASIL! Pengambilan 1 porsi telah dicatat.", "success");
+      tampilHasil(data);
 
-    const data = await callAPI(id, pin);
+    } else if (data.status === "FULL") {
+      tampilStatus("KUOTA HABIS! Tidak bisa mengambil porsi lagi.", "warning");
+      tampilHasil(data);
 
-    showResult(data);
-
-    // Jeda sebelum scan berikutnya.
-    setTimeout(() => {
-
-      if (scanner && scanning) {
-        scanner.resume();
-      }
-
-      processing = false;
-
-    }, 2500);
+    } else {
+      tampilStatus(data.message || "Terjadi kesalahan.", "error");
+    }
 
   } catch (error) {
+    tampilStatus(error.message, "error");
 
-    showMessage(
-      'KONEKSI GAGAL',
-      error.message,
-      'invalid'
-    );
+  } finally {
+    timerResume = setTimeout(() => {
+      sedangMemproses = false;
 
-    setTimeout(() => {
-
-      if (scanner && scanning) {
-        scanner.resume();
+      if (scanner && scannerAktif) {
+        try {
+          scanner.resume();
+          tampilStatus("Scanner aktif. Siap memindai QR berikutnya.", "success");
+        } catch (error) {
+          tampilStatus("Scanner perlu dimulai ulang.", "warning");
+        }
       }
-
-      processing = false;
-
     }, 2500);
-
   }
 }
 
-// Menampilkan hasil validasi.
-function showResult(data) {
 
-  const box = document.getElementById('result');
-
-  box.style.display = 'block';
-  box.className = 'result';
-
-  document.getElementById('resultTitle').textContent = '';
-  document.getElementById('resultMessage').textContent =
-    data.message || '';
-
-  document.getElementById('resultName').textContent =
-    data.nama ? 'Nama: ' + data.nama : '';
-
-  document.getElementById('resultId').textContent =
-    data.id ? 'ID: ' + data.id : '';
-
-  document.getElementById('resultInstansi').textContent =
-    data.instansi ? 'Instansi: ' + data.instansi : '';
-
-  if (data.status === 'VALID') {
-
-    box.classList.add('valid');
-    document.getElementById('resultTitle').textContent =
-      '✓ TIKET VALID';
-
-  } else if (data.status === 'USED') {
-
-    box.classList.add('used');
-    document.getElementById('resultTitle').textContent =
-      '✕ SUDAH DIGUNAKAN';
-
-  } else {
-
-    box.classList.add('invalid');
-    document.getElementById('resultTitle').textContent =
-      '⚠ TIDAK VALID';
-
+async function berhentiScanner() {
+  if (timerResume) {
+    clearTimeout(timerResume);
+    timerResume = null;
   }
+
+  sedangMemproses = false;
+
+  try {
+    if (scanner && scannerAktif) {
+      await scanner.stop();
+      scanner.clear();
+    }
+  } catch (error) {}
+
+  scannerAktif = false;
+
+  document.getElementById("startButton").style.display = "block";
+  document.getElementById("startButton").disabled = false;
+  document.getElementById("stopButton").style.display = "none";
+
+  tampilStatus("Scanner dihentikan.");
 }
-
-function showMessage(title, message, type) {
-
-  const box = document.getElementById('result');
-
-  box.style.display = 'block';
-  box.className = 'result ' + type;
-
-  document.getElementById('resultTitle').textContent = title;
-  document.getElementById('resultMessage').textContent = message;
-
-  document.getElementById('resultName').textContent = '';
-  document.getElementById('resultId').textContent = '';
-  document.getElementById('resultInstansi').textContent = '';
-
-}
-
 </script>
-
 </body>
 </html>
